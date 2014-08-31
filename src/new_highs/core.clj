@@ -5,7 +5,7 @@
 
 
 ; test data based on what will be read in from the file.
-(def stocks ["abc" "bhp" "sol" "rio" "abc" "coh" "sol" "abc" "abc" "gpt" "bol" "bol" "sol"])
+(def shares ["abc" "bhp" "sol" "rio" "abc" "coh" "sol" "abc" "abc" "gpt" "bol" "bol" "sol"])
 
 (defn build-string
   "Returns a string consisting of n times char c."
@@ -14,20 +14,21 @@
 
 (defn number-of-highs
   "Takes a list of stock codes. Returns a seq of [stock-code count] in order of count"
-  [stocks]
+  [shares]
   (sort-by last (map (fn [[k v]] [k (count v)])
-                     (group-by identity stocks))))
+                     (group-by identity shares))))
 
 (defn print-weekly-highs
-  [sorted-stock-seq]
-  (let [max (last (last sorted-stock-seq))]
-    (loop [[[stock-code num-times] & more] sorted-stock-seq]
-      (if stock-code
+  "Seq of [<share code> <number of highs>]"
+  [sorted-share-seq]
+  (let [max (last (last sorted-share-seq))]
+    (loop [[[share-code num-times] & more] sorted-share-seq]
+      (if share-code
         (do
           (println (str (build-string num-times "*")
                         (build-string (- max num-times) " ")
                         " "
-                        stock-code))
+                        share-code))
           (recur more))
         nil))))
 
