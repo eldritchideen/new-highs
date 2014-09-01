@@ -6,6 +6,9 @@
 (def shares [[1 "abc"] [1 "bhp"] [1 "sol"] [2 "rio"] [2 "abc"]])
 (def new-share-data [[2 "rio"] [2 "abc"] [2 "xyz"]])
 
-(deftest a-test
-  (testing "FIXME, I fail."
-    (is (= 0 1))))
+(deftest test-number-of-highs
+  (let [test-data ["abc" "rio" "bol" "abc" "bhp" "rio" "arp" "arp" "arp"]]
+    (is (= (number-of-highs test-data)
+           '(["bol" 1] ["bhp" 1] ["abc" 2] ["rio" 2] ["arp" 3])))
+    (is (= (number-of-highs []) []))))
+

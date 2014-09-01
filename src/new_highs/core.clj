@@ -15,8 +15,7 @@
 (defn number-of-highs
   "Takes a list of stock codes. Returns a seq of [stock-code count] in order of count"
   [shares]
-  (sort-by last (map (fn [[k v]] [k (count v)])
-                     (group-by identity shares))))
+  (sort-by last (frequencies shares)))
 
 (defn print-weekly-highs
   "Seq of [<share code> <number of highs>]"
