@@ -19,3 +19,9 @@
   (let [html (get-page URL)
         elems (get-elems html "#content > section > table > tbody > tr > th > a")]
     (into [] (for [e elems] (.text e)))))
+
+(defn get-time
+  []
+  (let [html (get-page URL)
+        elem (get-elems html "#content > section > header > p > time")]
+    (.text elem)))

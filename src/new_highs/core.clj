@@ -2,6 +2,7 @@
   (:require [new-highs.scraping :as scrape]
             [clojure.string :as string]
             [clj-time.core :as time]
+            [clj-time.format :as f]
             [clojure.data.csv :as csv]
             [clojure.java.io :as io])
   (:gen-class)
@@ -21,15 +22,11 @@
   "Seq of [<share code> <number of highs>]"
   [sorted-share-seq]
   (let [max (last (last sorted-share-seq))]
-    (loop [[[share-code num-times] & more] sorted-share-seq]
-      (if share-code
-        (do
-          (println (str (build-string num-times "*")
-                        (build-string (- max num-times) " ")
-                        " "
-                        share-code))
-          (recur more))
-        nil))))
+    (doseq [[share-code num-times] sorted-share-seq]
+      (println (str (build-string num-times "*")
+                    (build-string (- max num-times) " ")
+                    " "
+                    share-code)))))
 
 (defn read-shares-file
   "Read a CSV file where each line is <day of week>,<share-code>.
@@ -76,7 +73,9 @@
   (let [file-name    "./shares.csv"
         share-data   (group-shares-by-day (read-shares-file file-name))
         todays-highs (scrape/get-shares)
-        day-of-week  (time/day-of-week (time/today))
+        date-of-data (scrape/get-time)
+        date-format  (f/formatter "MMMMMMMMMMMMMM dd, yyyy")
+        day-of-week  (time/day-of-week (f/parse date-format date-of-data))
         todays-data  (assoc (dissoc share-data day-of-week) day-of-week todays-highs)
         todays-codes (shares-data-to-list todays-data)]
     (print-weekly-highs (number-of-highs todays-codes))
