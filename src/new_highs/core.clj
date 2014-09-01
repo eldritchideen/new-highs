@@ -1,11 +1,11 @@
 (ns new-highs.core
   (:require [new-highs.scraping :as scrape]
-            [clojure.string :as string])
-  (:gen-class))
-
-
-; test data based on what will be read in from the file.
-(def shares ["abc" "bhp" "sol" "rio" "abc" "coh" "sol" "abc" "abc" "gpt" "bol" "bol" "sol"])
+            [clojure.string :as string]
+            [clj-time.core :as time]
+            [clojure.data.csv :as csv]
+            [clojure.java.io :as io])
+  (:gen-class)
+  (:import (java.io FileNotFoundException)))
 
 (defn build-string
   "Returns a string consisting of n times char c."
@@ -32,12 +32,53 @@
           (recur more))
         nil))))
 
+(defn read-shares-file
+  "Read a CSV file where each line is <day of week>,<share-code>.
+   Returns a list of [<day-of-week> <share-code>]."
+  [file-name]
+  (try
+    (with-open [in-file (io/reader file-name)]
+      (doall
+        (csv/read-csv in-file)))
+    (catch FileNotFoundException e (vector))))
+
+(defn shares-map-to-csv
+  [shares-map]
+  (letfn [(kv-to-rows [[k v]]
+           (map vector (repeat (count v) k) v))]
+    (partition 2 (flatten (map kv-to-rows shares-map)))))
+
+(defn write-shares-file
+  [file-name data]
+  (let [csv-rows (shares-map-to-csv data)]
+    (with-open [out-file (io/writer file-name)]
+      (csv/write-csv out-file csv-rows))))
+
+(defn group-shares-by-day
+  [share-list]
+  (reduce
+    (fn [ret elem]
+      (let [[k v] elem]
+        (assoc ret (Long. k) (conj (get ret (Long. k) []) v))))
+    {} share-list))
+
+(defn shares-data-to-list
+  [shares]
+  (flatten
+    (reduce
+      (fn [ret elem]
+        (conj ret (second elem)))
+      []
+      shares)))
+
 (defn -main
   "Get the list of shares making new highs from the web, add it to the existing file and report."
   [& args]
-  ; Get current new highs from web and write them out to file.
-  (spit "shares.txt" (string/join "\n" (scrape/get-shares)) :append true)
-  ; Read in all new highs being tracked to date and draw chart of how many have made
-  ; reoccuring new highs since we started tracking.
-  (let [all-shares (string/split-lines (slurp "shares.txt"))]
-    (print-weekly-highs (number-of-highs all-shares))))
+  (let [file-name    "./shares.csv"
+        share-data   (group-shares-by-day (read-shares-file file-name))
+        todays-highs (scrape/get-shares)
+        day-of-week  (time/day-of-week (time/today))
+        todays-data  (assoc (dissoc share-data day-of-week) day-of-week todays-highs)
+        todays-codes (shares-data-to-list todays-data)]
+    (print-weekly-highs (number-of-highs todays-codes))
+    (write-shares-file file-name todays-data)))
