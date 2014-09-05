@@ -1,5 +1,6 @@
 (ns new-highs.core
   (:require [new-highs.scraping :as scrape]
+            [new-highs.allords :refer :all]
             [clojure.string :as string]
             [clj-time.core :as time]
             [clj-time.format :as f]
@@ -26,7 +27,8 @@
       (println (str (build-string num-times "*")
                     (build-string (- max num-times) " ")
                     " "
-                    share-code)))))
+                    share-code
+                    (if (contains? (all-ords) share-code) " (XAO)" ""))))))
 
 (defn read-shares-file
   "Read a CSV file where each line is <day of week>,<share-code>.
