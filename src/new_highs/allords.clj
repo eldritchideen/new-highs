@@ -5,4 +5,4 @@
 (defn all-ords
   []
   (let [all-ords-file (s/split-lines (slurp (io/resource "all-ords.txt")))]
-    (reduce (fn [map key] (conj map (hash-map key nil))) {} all-ords-file)))
+    (reduce (fn [set e] (conj set e)) #{} all-ords-file)))

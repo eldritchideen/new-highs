@@ -22,13 +22,14 @@
 (defn print-weekly-highs
   "Seq of [<share code> <number of highs>]"
   [sorted-share-seq]
-  (let [max (last (last sorted-share-seq))]
+  (let [max (last (last sorted-share-seq))
+        xao (all-ords)]
     (doseq [[share-code num-times] sorted-share-seq]
       (println (str (build-string num-times "*")
                     (build-string (- max num-times) " ")
                     " "
                     share-code
-                    (if (contains? (all-ords) share-code) " (XAO)" ""))))))
+                    (if (xao share-code) " (XAO)" ""))))))
 
 (defn read-shares-file
   "Read a CSV file where each line is <day of week>,<share-code>.
