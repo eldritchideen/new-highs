@@ -7,7 +7,8 @@
             [clojure.data.csv :as csv]
             [clojure.java.io :as io])
   (:gen-class)
-  (:import (java.io FileNotFoundException)))
+  (:import (java.io FileNotFoundException)
+           (java.util Calendar)))
 
 (defn build-string
   "Returns a string consisting of n times char c."
@@ -70,11 +71,21 @@
       []
       shares)))
 
+(defn file-name
+  [path extension]
+  (let [date         (doto (Calendar/getInstance) (.set Calendar/DAY_OF_WEEK 1))
+        week-in-year (. date get Calendar/WEEK_OF_YEAR)
+        year         (. date get Calendar/YEAR)
+        month        (inc (. date get Calendar/MONTH))
+        day          (. date get Calendar/DAY_OF_MONTH)]
+    (str path year "-" month "-" day "-wk-" week-in-year "." extension )
+    ))
+
 (defn -main
   "Get the list of shares making new highs from the web, add it to the existing file and report."
   [& args]
-  (let [file-name    "./shares.csv"
-        share-data   (group-shares-by-day (read-shares-file file-name))
+  (let [shares-file  (file-name "./" "csv")
+        share-data   (group-shares-by-day (read-shares-file shares-file))
         todays-highs (scrape/get-shares)
         date-of-data (scrape/get-time)
         date-format  (f/formatter "MMMMMMMMMMMMMM dd, yyyy")
@@ -82,4 +93,4 @@
         todays-data  (assoc (dissoc share-data day-of-week) day-of-week todays-highs)
         todays-codes (shares-data-to-list todays-data)]
     (print-weekly-highs (number-of-highs todays-codes))
-    (write-shares-file file-name todays-data)))
+    (write-shares-file shares-file todays-data)))
