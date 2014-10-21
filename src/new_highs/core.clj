@@ -7,7 +7,7 @@
             [clojure.data.csv :as csv]
             [clojure.java.io :as io])
   (:gen-class)
-  (:import (java.io FileNotFoundException)
+  (:import (java.io FileNotFoundException Writer)
            (java.util Calendar)))
 
 (defn build-string
@@ -21,16 +21,23 @@
   (sort-by last (frequencies shares)))
 
 (defn print-weekly-highs
+  "Seq of strings"
+  [share-strings-seq]
+  (doseq [s share-strings-seq]
+      (println s)))
+
+
+(defn weekly-highs-strings
   "Seq of [<share code> <number of highs>]"
   [sorted-share-seq]
   (let [max (last (last sorted-share-seq))
         xao (all-ords)]
-    (doseq [[share-code num-times] sorted-share-seq]
-      (println (str (build-string num-times "*")
-                    (build-string (- max num-times) " ")
-                    " "
-                    share-code
-                    (if (xao share-code) " (XAO)" ""))))))
+    (map (fn [[share-code num-times]]
+           (str (build-string num-times "*")
+                (build-string (- max num-times) " ")
+                " "
+                share-code
+                (if (xao share-code) " (XAO)" ""))) sorted-share-seq)))
 
 (defn read-shares-file
   "Read a CSV file where each line is <day of week>,<share-code>.
@@ -53,6 +60,13 @@
   (let [csv-rows (shares-map-to-csv data)]
     (with-open [out-file (io/writer file-name)]
       (csv/write-csv out-file csv-rows))))
+
+(defn write-share-results
+  [file-name results-seq]
+  (with-open [^Writer out-file (io/writer file-name)]
+    (doseq [line results-seq]
+      (.write out-file line)
+      (.write out-file "\n"))))
 
 (defn group-shares-by-day
   [share-list]
@@ -85,12 +99,15 @@
   "Get the list of shares making new highs from the web, add it to the existing file and report."
   [& args]
   (let [shares-file  (file-name "./" "csv")
+        output-file  (file-name "./" "txt")
         share-data   (group-shares-by-day (read-shares-file shares-file))
         todays-highs (scrape/get-shares)
         date-of-data (scrape/get-time)
         date-format  (f/formatter "MMMMMMMMMMMMMM dd, yyyy")
         day-of-week  (time/day-of-week (f/parse date-format date-of-data))
         todays-data  (assoc (dissoc share-data day-of-week) day-of-week todays-highs)
-        todays-codes (shares-data-to-list todays-data)]
-    (print-weekly-highs (number-of-highs todays-codes))
-    (write-shares-file shares-file todays-data)))
+        todays-codes (shares-data-to-list todays-data)
+        output-data  (weekly-highs-strings (number-of-highs todays-codes))]
+    (print-weekly-highs output-data)
+    (write-shares-file shares-file todays-data)
+    (write-share-results output-file output-data)))
