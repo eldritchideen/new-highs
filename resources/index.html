@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <title>Weekly New Highs</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    <link href="//asciimoo.github.io/cssplot/cssplot.full.css" rel="stylesheet"/>
+
+    <link href="/css/bootstrap.min.css" rel="stylesheet"/>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+    <style>
+
+        li[data-cp-size] > a {
+            color: #ffffff;
+        }
+
+    </style>
+
+</head>
+<body>
+<div class="container">
+    <div class="jumbotron">
+        <h1 align="center">Shares Making Yearly Highs</h1>
+    </div>
+    <div class="row">
+        <p>Site displays how many times a share on the ASX has made a yearly high in a week. The idea is that a share that is making
+            new highs on multiple days is trending strongly and should be researched further. I created this as I got
+        tired of looking at the data each day and trying to manually track with shares were coming up from day to day.</p>
+        <p>The data is scraped daily from the SMH website and aggregated. </p>
+    </div>
+    <div class="row">
+        <div class="col-md-3">
+            <ul>
+                <li><a href="/wkly-highs/45">06 Oct 2014 - Wk 45</a></li>
+                <li><a href="/wkly-highs/46">13 Oct 2014 - Wk 46</a></li>
+                <li><a href="/wkly-highs/47">20 Oct 2014 - Wk 47</a></li>
+                <li><a href="/wkly-highs/48">27 Oct 2014 - Wk 48</a></li>
+            </ul>
+        </div>
+        <div class="col-md-9">
+            <div class="vertical-chart">
+                <ul class="container">
+                    <li data-cp-size="20" ><a href="https://au.finance.yahoo.com/q/ta?s=FMG.AX&t=1y&l=on&z=l&q=b&p=m20&a=&c=">FMG</a></li>
+                    <li data-cp-size="40"><a href="https://au.finance.yahoo.com/q/ta?s=BHP.AX&t=1y&l=on&z=l&q=b&p=m20&a=&c=">BHP</a></li>
+                    <li data-cp-size="60"><a href="https://au.finance.yahoo.com/q/ta?s=TAH.AX&t=1y&l=on&z=l&q=b&p=m20&a=&c=">TAH</a></li>
+                    <li data-cp-size="80"><a href="https://au.finance.yahoo.com/q/ta?s=CRZ.AX&t=1y&l=on&z=l&q=b&p=m20&a=&c=">CRZ</a></li>
+                    <li data-cp-size="100"><a href="https://au.finance.yahoo.com/q/ta?s=FOO.AX&t=1y&l=on&z=l&q=b&p=m20&a=&c=">FOO</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
