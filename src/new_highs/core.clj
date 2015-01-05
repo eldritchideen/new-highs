@@ -8,43 +8,44 @@
   (:import (java.io FileNotFoundException PushbackReader)
            (java.util Calendar)))
 
-(def shares-data (atom {}))
+(def shares-data (ref {}))
 
-(defn serialise
+(defn- serialise
   "Writes out the state of the share data to a file"
   [file-name]
   (with-open [w (clojure.java.io/writer file-name)]
     (binding [*out* w]
       (pr @shares-data))))
 
-(defn deserialise
+(defn- deserialise
   "Loads share data state. If file doesn't exist return empty hash map."
   [file-name]
   (try
     (with-open [r (PushbackReader. (clojure.java.io/reader file-name))]
       (binding [*read-eval* false]
         (let [data (read r)]
-          (reset! shares-data data))))
+          (dosync
+            (ref-set shares-data data)))))
     (catch FileNotFoundException e {})))
 
-(defn build-string
+(defn- build-string
   "Returns a string consisting of n times char c."
   [n c]
   (apply str (repeat n c)))
 
-(defn number-of-highs
+(defn- number-of-highs
   "Takes a list of stock codes. Returns a seq of [stock-code count] in order of count"
   [shares]
   (sort-by last (frequencies shares)))
 
-(defn print-weekly-highs
+(defn- print-weekly-highs
   "Seq of strings"
   [share-strings-seq]
   (doseq [s share-strings-seq]
     (println s)))
 
 
-(defn weekly-highs-strings
+(defn- weekly-highs-strings
   "Seq of [<share code> <number of highs>]"
   [sorted-share-seq]
   (let [max (last (last sorted-share-seq))
@@ -56,7 +57,7 @@
                 share-code
                 (if (xao share-code) " (XAO)" ""))) sorted-share-seq)))
 
-(defn shares-data-to-list
+(defn- shares-data-to-list
   [shares]
   (flatten
     (reduce
@@ -65,14 +66,14 @@
       []
       shares)))
 
-(defn current-week
+(defn- current-dates
   []
   (let [date (doto (Calendar/getInstance) (.set Calendar/DAY_OF_WEEK 1))
         week-in-year (. date get Calendar/WEEK_OF_YEAR)
         year (. date get Calendar/YEAR)
         month (inc (. date get Calendar/MONTH))
         day (. date get Calendar/DAY_OF_MONTH)]
-    (format "%d-%02d-%02d, wk-%02d" year month day week-in-year)
+    [(format "%d-%02d-%02d - Wk No. %02d" year month day week-in-year) week-in-year]
     ))
 
 (def cli-options
@@ -80,21 +81,37 @@
     :default "./share-data.clj"]
    ["-h" "--help"]])
 
+(defn init
+  "Initialise the module. Currently just loads the data from file."
+  [share-data-filename]
+  (deserialise share-data-filename))
+
+(defn shutdown
+  "Writes out current share data state to file"
+  [share-data-filename]
+  (serialise share-data-filename))
+
+(defn update-shares
+  "Scrapes the website and updates the data of which shares are making new highs"
+  []
+  (let [[current-week week-in-year] (current-dates)
+        todays-highs                (scrape/get-shares)
+        date-of-data (scrape/get-time)
+        date-format (f/formatter "MMMMMMMMMMMMMM dd, yyyy")
+        day-of-week (time/day-of-week (f/parse date-format date-of-data))]
+    (dosync (alter shares-data assoc-in [week-in-year :data day-of-week] todays-highs)
+            (alter shares-data assoc-in [week-in-year :date ] current-week))
+    (->> (get-in @shares-data [week-in-year :data])
+         (shares-data-to-list)
+         (number-of-highs)
+         (weekly-highs-strings)
+         (print-weekly-highs))))
+
 (defn -main
   "Get the list of shares making new highs from the web, add it to the existing file and report."
   [& args]
   (let [options             (parse-opts args cli-options)
         share-data-filename (get-in options [:options :output])]
-    (deserialise share-data-filename)
-    (let [current-week (current-week)
-          todays-highs (scrape/get-shares)
-          date-of-data (scrape/get-time)
-          date-format (f/formatter "MMMMMMMMMMMMMM dd, yyyy")
-          day-of-week (time/day-of-week (f/parse date-format date-of-data))]
-      (swap! shares-data assoc-in [current-week day-of-week] todays-highs)
-      (->> (@shares-data current-week)
-           (shares-data-to-list)
-           (number-of-highs)
-           (weekly-highs-strings)
-           (print-weekly-highs))
-      (serialise share-data-filename))))
+    (init share-data-filename)
+    (update-shares)
+    (shutdown share-data-filename)))
