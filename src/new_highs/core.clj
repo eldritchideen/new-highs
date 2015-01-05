@@ -3,12 +3,11 @@
             [new-highs.allords :refer :all]
             [clj-time.core :as time]
             [clj-time.format :as f]
-            [clojure.java.io :as io])
+            [clojure.tools.cli :refer [parse-opts]])
   (:gen-class)
   (:import (java.io FileNotFoundException PushbackReader)
            (java.util Calendar)))
 
-(def share-data-file "./share-data.clj")
 (def shares-data (atom {}))
 
 (defn serialise
@@ -42,7 +41,7 @@
   "Seq of strings"
   [share-strings-seq]
   (doseq [s share-strings-seq]
-      (println s)))
+    (println s)))
 
 
 (defn weekly-highs-strings
@@ -68,27 +67,34 @@
 
 (defn current-week
   []
-  (let [date         (doto (Calendar/getInstance) (.set Calendar/DAY_OF_WEEK 1))
+  (let [date (doto (Calendar/getInstance) (.set Calendar/DAY_OF_WEEK 1))
         week-in-year (. date get Calendar/WEEK_OF_YEAR)
-        year         (. date get Calendar/YEAR)
-        month        (inc (. date get Calendar/MONTH))
-        day          (. date get Calendar/DAY_OF_MONTH)]
+        year (. date get Calendar/YEAR)
+        month (inc (. date get Calendar/MONTH))
+        day (. date get Calendar/DAY_OF_MONTH)]
     (format "%d-%02d-%02d, wk-%02d" year month day week-in-year)
     ))
+
+(def cli-options
+  [["-d" "--output FILE" "path and file name to store data"
+    :default "./share-data.clj"]
+   ["-h" "--help"]])
 
 (defn -main
   "Get the list of shares making new highs from the web, add it to the existing file and report."
   [& args]
-  (deserialise share-data-file)
-  (let [current-week (current-week)
-        todays-highs (scrape/get-shares)
-        date-of-data (scrape/get-time)
-        date-format  (f/formatter "MMMMMMMMMMMMMM dd, yyyy")
-        day-of-week  (time/day-of-week (f/parse date-format date-of-data))]
-    (swap! shares-data assoc-in [current-week day-of-week] todays-highs)
-    (->> (@shares-data current-week)
-         (shares-data-to-list)
-         (number-of-highs)
-         (weekly-highs-strings)
-         (print-weekly-highs))
-    (serialise share-data-file)))
+  (let [options             (parse-opts args cli-options)
+        share-data-filename (get-in options [:options :output])]
+    (deserialise share-data-filename)
+    (let [current-week (current-week)
+          todays-highs (scrape/get-shares)
+          date-of-data (scrape/get-time)
+          date-format (f/formatter "MMMMMMMMMMMMMM dd, yyyy")
+          day-of-week (time/day-of-week (f/parse date-format date-of-data))]
+      (swap! shares-data assoc-in [current-week day-of-week] todays-highs)
+      (->> (@shares-data current-week)
+           (shares-data-to-list)
+           (number-of-highs)
+           (weekly-highs-strings)
+           (print-weekly-highs))
+      (serialise share-data-filename))))
