@@ -96,9 +96,9 @@
   []
   (let [[current-week week-in-year] (current-dates)
         todays-highs                (scrape/get-shares)
-        date-of-data (scrape/get-time)
-        date-format (f/formatter "MMMMMMMMMMMMMM dd, yyyy")
-        day-of-week (time/day-of-week (f/parse date-format date-of-data))]
+        date-of-data                (scrape/get-time)
+        date-format                 (f/formatter "MMMMMMMMMMMMMM dd, yyyy")
+        day-of-week                 (time/day-of-week (f/parse date-format date-of-data))]
     (dosync (alter shares-data assoc-in [week-in-year :data day-of-week] todays-highs)
             (alter shares-data assoc-in [week-in-year :date ] current-week))
     (->> (get-in @shares-data [week-in-year :data])
