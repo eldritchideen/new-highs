@@ -100,10 +100,21 @@
         date-format                 (f/formatter "MMMMMMMMMMMMMM dd, yyyy")
         day-of-week                 (time/day-of-week (f/parse date-format date-of-data))]
     (dosync (alter shares-data assoc-in [week-in-year :data day-of-week] todays-highs)
-            (alter shares-data assoc-in [week-in-year :date ] current-week))
-    (->> (get-in @shares-data [week-in-year :data])
-         (shares-data-to-list)
-         (number-of-highs)
+            (alter shares-data assoc-in [week-in-year :date ] current-week))))
+
+(defn list-highs
+  "Returns a list of shares and how many highs they have made for a given week.
+   For example: ([\"CTX\" 1] [\"BLX\" 1][\"VTG\" 2] [\"USD\" 2])"
+  [week]
+  (->> (get-in @shares-data [week :data])
+       (shares-data-to-list)
+       (number-of-highs)))
+
+(defn output-highs
+  "Prints out the current new highs for the week"
+  []
+  (let [[_ week-in-year] (current-dates)]
+    (->> (list-highs week-in-year)
          (weekly-highs-strings)
          (print-weekly-highs))))
 
@@ -114,4 +125,5 @@
         share-data-filename (get-in options [:options :output])]
     (init share-data-filename)
     (update-shares)
+    (output-highs)
     (shutdown share-data-filename)))
